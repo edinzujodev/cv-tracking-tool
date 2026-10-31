@@ -37,9 +37,12 @@ One column. No tables, text boxes, icons or images carrying text. Standard headi
    designs. Same `render(profile)` contract. The designs' contact icons are left out
    on purpose: icons are what ATS parsers trip on. Fonts are system stacks that
    approximate the designs; bundle the real fonts later if exact looks matter.
-3. **ATS check.** Parse the generated PDF with pdf.js, extract name, contacts, work
-   history, education and skills, diff against the profile, show a score and the
-   fields that failed. DOCX export with docx.js.
+3. **ATS check** (done). `src/ats/`: `reader.js` turns text into lines in two reading
+   orders (file order, and top-to-bottom left-to-right), `parser.js` finds the name,
+   contacts and section headings, `check.js` looks for every profile field again and
+   scores it. Two inputs: the rendered page (instant, approximate) and a saved PDF read
+   with pdf.js (accurate; it caught a heading-order bug the page check could not).
+   Not done yet: DOCX export with docx.js.
 4. **Fuller scans.** Read the "see all" detail pages for complete lists and split
    grouped roles. No upload or paste fallback: the extension only scans.
 5. **Polish.** Icons, store listing, Firefox build, optional job-description tailoring.
