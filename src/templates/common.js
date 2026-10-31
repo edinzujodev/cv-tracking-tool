@@ -5,6 +5,8 @@
 // left or right) are CSS grid over markup that still reads top to bottom:
 // heading, then content, then dates.
 
+import { headingKey } from '../ats/parser.js';
+
 export const esc = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -39,7 +41,15 @@ function skills(p) {
   const groups = p.skillGroups.length ? p.skillGroups : p.skills.length ? [{ name: '', items: p.skills }] : [];
   if (!groups.length) return '';
   return `<div class="skills">${groups
-    .map((g) => `<div class="skill-group">${g.name ? `<strong>${esc(g.name)}</strong>` : ''}<p>${g.items.map(esc).join(', ')}</p></div>`)
+    .map((g) => {
+      const items = g.items.map(esc).join(', ');
+      // A label alone on its line, like "Languages", reads as a section heading and
+      // ends the Skills section for a parser. Put such a label on the same line.
+      if (g.name && headingKey(g.name)) {
+        return `<div class="skill-group"><p><strong>${esc(g.name)}:</strong> ${items}</p></div>`;
+      }
+      return `<div class="skill-group">${g.name ? `<strong>${esc(g.name)}</strong>` : ''}<p>${items}</p></div>`;
+    })
     .join('')}</div>`;
 }
 

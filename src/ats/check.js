@@ -141,7 +141,14 @@ function checkOne(profile, items, mode) {
   if (skills.length) {
     const text = sec('skills').join(' ');
     const n = skills.filter((s) => has(text, s)).length;
-    add('skills', 'Skills found under Skills', grade(n, skills.length, 0.95, 0.6), `${n} of ${skills.length} skills`);
+    let detail = `${n} of ${skills.length} skills`;
+    if (n < skills.length) {
+      const elsewhere = skills.filter((s) => !has(text, s) && has(lines.join(' '), s)).length;
+      if (elsewhere) {
+        detail += `. ${elsewhere} were read, but outside the Skills section: a skill label such as "Languages" can look like a section heading`;
+      }
+    }
+    add('skills', 'Skills found under Skills', grade(n, skills.length, 0.95, 0.6), detail);
   }
 
   const other = [

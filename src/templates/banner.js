@@ -6,8 +6,11 @@ const CSS = `${BASE_CSS}
   .t-banner .hdr { background: #05476b; color: #fff; padding: 16pt 18pt; margin-bottom: 4pt; }
   .t-banner h1 { font-weight: 600; }
   .t-banner .tagline { font-style: italic; }
-  .t-banner h2 { color: var(--accent); font-weight: 700; padding-bottom: 5pt; position: relative; margin-bottom: 8pt; }
-  .t-banner h2::after { content: ''; position: absolute; left: 0; bottom: 0; width: 38pt; height: 3pt; background: var(--accent); }
+  /* The underline is a background, not a positioned pseudo-element: positioned text
+     is written to the PDF after everything else, which pushes headings to the end
+     of the text an ATS reads. */
+  .t-banner h2 { color: var(--accent); font-weight: 700; padding-bottom: 6pt; margin-bottom: 8pt;
+                 background: linear-gradient(var(--accent), var(--accent)) no-repeat left bottom / 38pt 3pt; }
   .t-banner .item { grid-template-columns: 1fr auto; grid-template-areas: "main meta"; }
   .t-banner .item .meta { text-align: right; white-space: nowrap; }
   .t-banner .skills { grid-template-columns: repeat(3, 1fr); }
