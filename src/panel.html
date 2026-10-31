@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LinkedIn Resume</title>
+  <link rel="stylesheet" href="../vendor/pico.min.css">
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <main class="container">
+    <hgroup>
+      <h1>LinkedIn Resume</h1>
+      <p>Turn your own profile into an ATS-friendly resume.</p>
+    </hgroup>
+
+    <button id="scan">Scan my profile</button>
+    <p id="status" role="status"></p>
+
+    <form id="form" hidden>
+      <label>Name <input name="name"></label>
+      <label>Headline <input name="headline"></label>
+      <label>Location <input name="location"></label>
+      <label>Email <input name="email" type="email"></label>
+      <label>Phone <input name="phone" type="tel"></label>
+      <p id="counts"><small></small></p>
+
+      <label>Template
+        <select name="template" id="template"></select>
+      </label>
+
+      <button type="submit">Open resume</button>
+    </form>
+
+    <small>Everything stays in your browser. Nothing is uploaded.</small>
+  </main>
+  <script type="module" src="panel.js"></script>
+</body>
+</html>
