@@ -1,18 +1,21 @@
-# LinkedIn Resume
+# CV Tracking Tool
 
-Chrome extension that turns your own LinkedIn profile into an ATS-friendly resume.
-Everything stays in your browser. See [docs/PLAN.md](docs/PLAN.md).
+Chrome extension to track your job applications: the job (link or description), which CV
+you sent, the date you applied (today by default), and the status. Everything stays in
+your browser. Nothing is uploaded.
 
 ## Try it
 
 1. Open `chrome://extensions` and turn on **Developer mode**.
 2. **Load unpacked** and select this folder.
-3. Open your own LinkedIn profile, click the extension icon, then **Scan my profile**.
-4. Check the details, pick a template, **Open resume**, then **Save as PDF**.
-5. Back on the resume page, **Check a saved PDF** reads your PDF the way a parser would
-   and lists anything it could not read.
+3. Click the extension icon to open the tracker.
+4. Fill in the job, the CV you used, and the status, then **Add application**.
 
-## Tests
+Change a status straight from the table. **Edit** reloads a row into the form. **Export CSV**
+downloads everything.
 
-`node --test test/check.test.mjs` runs the read-back check on made-up resumes, including
-broken ones. `test/browser-harness.html` runs it in a real browser against a printed PDF.
+## Test
+
+```
+node --test
+```

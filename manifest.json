@@ -1,19 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "LinkedIn Resume",
-  "version": "0.1.0",
-  "description": "Turn your own LinkedIn profile into an ATS-friendly resume. Everything stays in your browser.",
+  "name": "CV Tracking Tool",
+  "version": "0.2.0",
+  "description": "Track the jobs you applied to, which CV you sent, when, and where each application stands. Everything stays in your browser.",
   "minimum_chrome_version": "116",
-  "permissions": ["sidePanel", "storage", "activeTab"],
-  "host_permissions": ["https://www.linkedin.com/in/*"],
+  "permissions": ["storage"],
   "background": { "service_worker": "src/background.js" },
-  "action": { "default_title": "LinkedIn Resume" },
-  "side_panel": { "default_path": "src/panel.html" },
-  "content_scripts": [
-    {
-      "matches": ["https://www.linkedin.com/in/*"],
-      "js": ["src/scanner.js"],
-      "run_at": "document_idle"
-    }
-  ]
+  "action": { "default_title": "CV Tracking Tool" }
 }

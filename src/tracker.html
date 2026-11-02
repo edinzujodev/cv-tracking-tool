@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CV Tracking Tool</title>
+  <link rel="stylesheet" href="../vendor/pico.min.css">
+  <link rel="stylesheet" href="tracker.css">
+</head>
+<body>
+  <main class="container">
+    <hgroup>
+      <h1>CV Tracking Tool</h1>
+      <p>Which job, which CV, when, and where it stands.</p>
+    </hgroup>
+
+    <form id="form">
+      <label>Job link or description
+        <textarea name="job" rows="3" required placeholder="https://… or paste the job description"></textarea>
+      </label>
+      <div class="grid">
+        <label>Role / company (optional)
+          <input name="title" placeholder="Backend engineer, Acme">
+        </label>
+        <label>CV used
+          <input name="cv" list="cvs" required placeholder="CV v3 backend.pdf">
+          <datalist id="cvs"></datalist>
+        </label>
+      </div>
+      <div class="grid">
+        <label>Date applied
+          <input name="appliedOn" type="date" required>
+        </label>
+        <label>Status
+          <select name="status"></select>
+        </label>
+      </div>
+      <div class="grid">
+        <button type="submit" id="save">Add application</button>
+        <button type="button" id="cancel" class="secondary" hidden>Cancel edit</button>
+      </div>
+    </form>
+
+    <section>
+      <div class="bar">
+        <h2 id="count">Applications</h2>
+        <select id="filter" aria-label="Filter by status"></select>
+        <button id="export" class="outline secondary">Export CSV</button>
+      </div>
+      <figure>
+        <table id="table" role="grid">
+          <thead>
+            <tr><th>Applied</th><th>Job</th><th>CV</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </figure>
+      <p id="empty" hidden>Nothing here yet. Add your first application above.</p>
+    </section>
+
+    <small>Everything stays in your browser. Nothing is uploaded.</small>
+  </main>
+  <script type="module" src="tracker.js"></script>
+</body>
+</html>

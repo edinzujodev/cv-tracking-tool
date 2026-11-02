@@ -1,40 +1,46 @@
-// The one data shape every part of the extension agrees on.
-// The scanner fills it, the panel edits it, templates render it.
+// The one data shape the tracker uses, plus storage helpers.
 
-export function emptyProfile() {
+export const STATUSES = ['Applied', 'Interview', 'Offer', 'Rejected', 'Ghosted', 'Withdrawn'];
+
+export const STORAGE_KEY = 'applications';
+
+// Local date as YYYY-MM-DD (toISOString would give the UTC day, which can be off by one).
+export function today(now = new Date()) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
+}
+
+export function emptyApplication() {
   return {
-    name: '',
-    headline: '',
-    location: '',
-    email: '',
-    phone: '',
-    links: [],          // [{ label, url }]
-    summary: '',
-    experience: [],     // [{ title, company, location, start, end, description }]
-    education: [],      // [{ school, degree, start, end }]
-    skills: [],         // [string]
-    skillGroups: [],    // [{ name, items: [string] }]; shown instead of skills when set
-    certifications: [], // [{ name, issuer, date }]
-    awards: [],         // [{ title, issuer, date }]
-    projects: [],       // [{ name, description }]
-    volunteering: [],   // [{ role, organization, start, end, description }]
-    languages: [],      // [string]
+    id: '',
+    job: '',        // link or pasted description
+    title: '',      // optional short label, e.g. "Backend engineer, Acme"
+    cv: '',         // which CV was sent, e.g. "CV v3 backend.pdf"
+    appliedOn: today(),
+    status: STATUSES[0],
   };
 }
 
-// Fill any missing keys so templates never have to null-check the shape.
-export function normalizeProfile(raw) {
-  return { ...emptyProfile(), ...(raw || {}) };
+export function isLink(job) {
+  return /^https?:\/\/\S+$/i.test((job || '').trim());
 }
 
-export const STORAGE_KEY = 'profile';
-export const TEMPLATE_KEY = 'template';
+function csvCell(v) {
+  const s = String(v ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
 
-export async function loadProfile() {
+export function toCsv(apps) {
+  const head = ['Applied on', 'Status', 'Role', 'CV', 'Job'];
+  const rows = apps.map((a) => [a.appliedOn, a.status, a.title, a.cv, a.job]);
+  return [head, ...rows].map((r) => r.map(csvCell).join(',')).join('\n');
+}
+
+export async function loadApplications() {
   const got = await chrome.storage.local.get(STORAGE_KEY);
-  return normalizeProfile(got[STORAGE_KEY]);
+  return got[STORAGE_KEY] || [];
 }
 
-export function saveProfile(profile) {
-  return chrome.storage.local.set({ [STORAGE_KEY]: profile });
+export function saveApplications(apps) {
+  return chrome.storage.local.set({ [STORAGE_KEY]: apps });
 }
