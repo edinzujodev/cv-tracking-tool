@@ -14,13 +14,21 @@
       <p>Which job, which CV, when, and where it stands.</p>
     </hgroup>
 
+    <p id="folder">
+      <button type="button" id="pickFolder" class="outline">Choose CV folder</button>
+      <small id="folderName"></small>
+    </p>
+
     <form id="form">
       <label>Job link or description
         <textarea name="job" rows="3" required placeholder="https://… or paste the job description"></textarea>
       </label>
       <div class="grid">
-        <label>Role / company (optional)
-          <input name="title" placeholder="Backend engineer, Acme">
+        <label>Client / company
+          <input name="client" required placeholder="Acme">
+        </label>
+        <label>Role (optional)
+          <input name="title" placeholder="Backend engineer">
         </label>
         <label>CV used
           <select name="cvPick"></select>

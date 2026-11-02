@@ -1,7 +1,9 @@
 import {
   STATUSES, emptyApplication, isLink, toCsv, today, loadApplications, saveApplications,
 } from './model.js';
-import { putCv, getCv, deleteCv, fileKey } from './files.js';
+import {
+  putCv, getCv, deleteCv, fileKey, getRoot, setRoot, ensureWritable, saveToClientFolder,
+} from './files.js';
 
 const $ = (id) => document.getElementById(id);
 const form = $('form');
@@ -14,23 +16,24 @@ let editingId = null;
 const options = (list) => list.map((s) => `<option>${s}</option>`).join('');
 
 function jobCell(a) {
+  const title = [a.client, a.title].filter(Boolean).join(' — ');
   const td = document.createElement('td');
   td.className = 'job';
-  if (a.title) td.append(a.title);
+  if (title) td.append(title);
   if (isLink(a.job)) {
     const link = document.createElement('a');
     link.href = a.job;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    link.textContent = a.title ? new URL(a.job).hostname : a.job;
-    if (a.title) {
+    link.textContent = title ? new URL(a.job).hostname : a.job;
+    if (title) {
       const small = document.createElement('small');
       small.append(link);
       td.append(small);
     } else td.append(link);
   } else {
     const text = a.job.length > 140 ? `${a.job.slice(0, 140)}…` : a.job;
-    if (a.title) {
+    if (title) {
       const small = document.createElement('small');
       small.textContent = text;
       td.append(small);
@@ -138,7 +141,7 @@ function resetForm() {
 
 function startEdit(a) {
   editingId = a.id;
-  for (const f of ['job', 'title', 'appliedOn', 'status']) form.elements[f].value = a[f];
+  for (const f of ['job', 'client', 'title', 'appliedOn', 'status']) form.elements[f].value = a[f];
   fillCvPick(a.cvKey);
   form.elements.cvFile.value = '';
   syncCvHint();
@@ -151,6 +154,7 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const data = {
     job: form.elements.job.value.trim(),
+    client: form.elements.client.value.trim(),
     title: form.elements.title.value.trim(),
     appliedOn: form.elements.appliedOn.value || today(),
     status: form.elements.status.value,
@@ -162,6 +166,10 @@ form.addEventListener('submit', async (e) => {
     form.elements.cvFile.reportValidity();
     return;
   }
+  // Ask for folder access now, while the click that submitted the form still counts.
+  const root = await getRoot();
+  const canWrite = root ? await ensureWritable(root) : false;
+
   if (file) {
     await putCv(file);
     data.cv = file.name;
@@ -169,6 +177,16 @@ form.addEventListener('submit', async (e) => {
   } else {
     data.cvKey = picked;
     data.cv = apps.find((a) => a.cvKey === picked).cv;
+  }
+
+  const blob = file || (await getCv(data.cvKey));
+  let savedTo = '';
+  if (canWrite && blob) {
+    try {
+      savedTo = await saveToClientFolder(root, data.client, blob);
+    } catch (err) {
+      alert(`Saved the application, but could not write the CV to your folder: ${err.message}`);
+    }
   }
 
   let oldKey = '';
@@ -183,6 +201,8 @@ form.addEventListener('submit', async (e) => {
   if (oldKey !== data.cvKey) await pruneCv(oldKey);
   resetForm();
   render();
+  if (savedTo) flash(`CV saved to ${savedTo}`);
+  else if (!canWrite) flash('Application saved. Choose a CV folder to also save the file on disk.');
 });
 
 function syncCvHint() {
@@ -192,6 +212,26 @@ function syncCvHint() {
   $('cvHint').textContent = hasFile ? 'The uploaded file will be used.' : 'Pick one you used before, or upload a new one.';
 }
 form.elements.cvFile.addEventListener('change', syncCvHint);
+
+function flash(msg) {
+  $('folderName').textContent = msg;
+}
+
+async function showFolder() {
+  const root = await getRoot();
+  $('folderName').textContent = root
+    ? `Saving CVs to …\${root.name}\<client>`
+    : 'No folder chosen: CVs are kept in the browser only.';
+}
+
+$('pickFolder').addEventListener('click', async () => {
+  try {
+    await setRoot(await showDirectoryPicker({ id: 'cv-folder', mode: 'readwrite' }));
+    showFolder();
+  } catch (err) {
+    if (err.name !== 'AbortError') alert(`Could not use that folder: ${err.message}`);
+  }
+});
 
 $('cancel').addEventListener('click', resetForm);
 filter.addEventListener('change', render);
@@ -209,6 +249,7 @@ $('export').addEventListener('click', () => {
   form.elements.status.innerHTML = options(STATUSES);
   filter.innerHTML = options(['All', ...STATUSES]);
   apps = await loadApplications();
+  showFolder();
   resetForm();
   render();
 })();

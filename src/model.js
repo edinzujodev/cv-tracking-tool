@@ -14,7 +14,8 @@ export function emptyApplication() {
   return {
     id: '',
     job: '',        // link or pasted description
-    title: '',      // optional short label, e.g. "Backend engineer, Acme"
+    client: '',     // company; also the name of the folder the CV is saved in
+    title: '',      // optional role, e.g. "Backend engineer"
     cv: '',         // file name of the CV that was sent, e.g. "CV v3 backend.pdf"
     cvKey: '',      // key of the stored file (see files.js)
     appliedOn: today(),
@@ -32,8 +33,8 @@ function csvCell(v) {
 }
 
 export function toCsv(apps) {
-  const head = ['Applied on', 'Status', 'Role', 'CV', 'Job'];
-  const rows = apps.map((a) => [a.appliedOn, a.status, a.title, a.cv, a.job]);
+  const head = ['Applied on', 'Status', 'Client', 'Role', 'CV', 'Job'];
+  const rows = apps.map((a) => [a.appliedOn, a.status, a.client, a.title, a.cv, a.job]);
   return [head, ...rows].map((r) => r.map(csvCell).join(',')).join('\n');
 }
 

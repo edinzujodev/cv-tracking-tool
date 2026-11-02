@@ -20,10 +20,10 @@ test('isLink accepts urls and rejects descriptions', () => {
 
 test('toCsv quotes commas, quotes and newlines', () => {
   const csv = toCsv([
-    { appliedOn: '2026-11-02', status: 'Applied', title: 'Dev, Acme', cv: 'cv.pdf', job: 'say "hi"\nnow' },
+    { appliedOn: '2026-11-02', status: 'Applied', client: 'Acme', title: 'Dev, Lead', cv: 'cv.pdf', job: 'say "hi"\nnow' },
   ]);
   assert.equal(
     csv,
-    'Applied on,Status,Role,CV,Job\n2026-11-02,Applied,"Dev, Acme",cv.pdf,"say ""hi""\nnow"'
+    'Applied on,Status,Client,Role,CV,Job\n2026-11-02,Applied,Acme,"Dev, Lead",cv.pdf,"say ""hi""\nnow"'
   );
 });
