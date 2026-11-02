@@ -1,6 +1,7 @@
 import {
   STATUSES, emptyApplication, isLink, toCsv, today, loadApplications, saveApplications,
 } from './model.js';
+import { putCv, getCv, deleteCv, fileKey } from './files.js';
 
 const $ = (id) => document.getElementById(id);
 const form = $('form');
@@ -46,7 +47,19 @@ function row(a) {
   date.textContent = a.appliedOn;
 
   const cv = document.createElement('td');
-  cv.textContent = a.cv;
+  if (a.cvKey) {
+    const link = document.createElement('a');
+    link.className = 'cv';
+    link.href = '#';
+    link.textContent = a.cv;
+    link.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const file = await getCv(a.cvKey);
+      if (!file) return alert('The stored file is missing. Edit this row and upload it again.');
+      window.open(URL.createObjectURL(file), '_blank');
+    });
+    cv.append(link);
+  } else cv.textContent = a.cv;
 
   const status = document.createElement('td');
   const select = document.createElement('select');
@@ -72,12 +85,31 @@ function row(a) {
     apps = apps.filter((x) => x.id !== a.id);
     if (editingId === a.id) resetForm();
     await saveApplications(apps);
+    await pruneCv(a.cvKey);
     render();
   });
   actions.append(edit, del);
 
   tr.append(date, jobCell(a), cv, status, actions);
   return tr;
+}
+
+// Drop a stored CV file once no application points at it.
+async function pruneCv(key) {
+  if (key && !apps.some((a) => a.cvKey === key)) await deleteCv(key);
+}
+
+function fillCvPick(selected = '') {
+  const used = new Map(apps.filter((a) => a.cvKey).map((a) => [a.cvKey, a.cv]));
+  const pick = form.elements.cvPick;
+  pick.innerHTML = '<option value="">Upload a new file…</option>';
+  for (const [key, name] of used) {
+    const o = document.createElement('option');
+    o.value = key;
+    o.textContent = name;
+    pick.append(o);
+  }
+  pick.value = used.has(selected) ? selected : '';
 }
 
 function render() {
@@ -89,7 +121,7 @@ function render() {
   $('empty').hidden = shown.length > 0;
   $('table').hidden = shown.length === 0;
   $('count').textContent = `Applications (${shown.length}${filter.value === 'All' ? '' : ` ${filter.value.toLowerCase()}`})`;
-  $('cvs').innerHTML = options([...new Set(apps.map((a) => a.cv))]);
+  fillCvPick(form.elements.cvPick.value);
 }
 
 function resetForm() {
@@ -98,13 +130,18 @@ function resetForm() {
   form.reset();
   form.elements.appliedOn.value = blank.appliedOn;
   form.elements.status.value = blank.status;
+  fillCvPick();
+  syncCvHint();
   $('save').textContent = 'Add application';
   $('cancel').hidden = true;
 }
 
 function startEdit(a) {
   editingId = a.id;
-  for (const f of ['job', 'title', 'cv', 'appliedOn', 'status']) form.elements[f].value = a[f];
+  for (const f of ['job', 'title', 'appliedOn', 'status']) form.elements[f].value = a[f];
+  fillCvPick(a.cvKey);
+  form.elements.cvFile.value = '';
+  syncCvHint();
   $('save').textContent = 'Save changes';
   $('cancel').hidden = false;
   form.scrollIntoView({ behavior: 'smooth' });
@@ -115,19 +152,46 @@ form.addEventListener('submit', async (e) => {
   const data = {
     job: form.elements.job.value.trim(),
     title: form.elements.title.value.trim(),
-    cv: form.elements.cv.value.trim(),
     appliedOn: form.elements.appliedOn.value || today(),
     status: form.elements.status.value,
   };
+  const file = form.elements.cvFile.files[0];
+  const picked = form.elements.cvPick.value;
+  if (!file && !picked) {
+    form.elements.cvFile.setCustomValidity('Choose a CV you used before, or upload one.');
+    form.elements.cvFile.reportValidity();
+    return;
+  }
+  if (file) {
+    await putCv(file);
+    data.cv = file.name;
+    data.cvKey = fileKey(file);
+  } else {
+    data.cvKey = picked;
+    data.cv = apps.find((a) => a.cvKey === picked).cv;
+  }
+
+  let oldKey = '';
   if (editingId) {
-    Object.assign(apps.find((a) => a.id === editingId), data);
+    const existing = apps.find((a) => a.id === editingId);
+    oldKey = existing.cvKey;
+    Object.assign(existing, data);
   } else {
     apps.push({ ...emptyApplication(), ...data, id: crypto.randomUUID() });
   }
   await saveApplications(apps);
+  if (oldKey !== data.cvKey) await pruneCv(oldKey);
   resetForm();
   render();
 });
+
+function syncCvHint() {
+  form.elements.cvFile.setCustomValidity('');
+  const hasFile = form.elements.cvFile.files.length > 0;
+  form.elements.cvPick.disabled = hasFile;
+  $('cvHint').textContent = hasFile ? 'The uploaded file will be used.' : 'Pick one you used before, or upload a new one.';
+}
+form.elements.cvFile.addEventListener('change', syncCvHint);
 
 $('cancel').addEventListener('click', resetForm);
 filter.addEventListener('change', render);

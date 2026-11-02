@@ -5,6 +5,7 @@ hgroup h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
 .bar select, .bar button { width: auto; margin: 0; }
 td select { margin: 0; padding: 0.25rem 2rem 0.25rem 0.5rem; width: auto; }
 td button { margin: 0 0.25rem 0 0; padding: 0.15rem 0.6rem; width: auto; }
+td a.cv { overflow-wrap: anywhere; }
 td.job { max-width: 24rem; overflow-wrap: anywhere; }
 td.job small { display: block; color: var(--pico-muted-color); }
 tr.Offer td:first-child { box-shadow: inset 3px 0 var(--pico-ins-color); }

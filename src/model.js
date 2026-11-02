@@ -15,7 +15,8 @@ export function emptyApplication() {
     id: '',
     job: '',        // link or pasted description
     title: '',      // optional short label, e.g. "Backend engineer, Acme"
-    cv: '',         // which CV was sent, e.g. "CV v3 backend.pdf"
+    cv: '',         // file name of the CV that was sent, e.g. "CV v3 backend.pdf"
+    cvKey: '',      // key of the stored file (see files.js)
     appliedOn: today(),
     status: STATUSES[0],
   };

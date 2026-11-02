@@ -9,7 +9,7 @@ your browser. Nothing is uploaded.
 1. Open `chrome://extensions` and turn on **Developer mode**.
 2. **Load unpacked** and select this folder.
 3. Click the extension icon to open the tracker.
-4. Fill in the job, the CV you used, and the status, then **Add application**.
+4. Fill in the job, upload the CV you used (or pick one you uploaded before), set the status, then **Add application**. Click a CV name in the table to open the file.
 
 Change a status straight from the table. **Edit** reloads a row into the form. **Export CSV**
 downloads everything.

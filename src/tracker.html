@@ -23,8 +23,9 @@
           <input name="title" placeholder="Backend engineer, Acme">
         </label>
         <label>CV used
-          <input name="cv" list="cvs" required placeholder="CV v3 backend.pdf">
-          <datalist id="cvs"></datalist>
+          <select name="cvPick"></select>
+          <input name="cvFile" type="file" accept=".pdf,.doc,.docx,.odt,.rtf,.txt">
+          <small id="cvHint"></small>
         </label>
       </div>
       <div class="grid">
