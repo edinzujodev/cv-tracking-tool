@@ -33,6 +33,7 @@ export function emptyApplication() {
   return {
     id: '',
     job: '',        // link or pasted description
+    jobText: '',    // saved copy of the posting text, kept in case the link dies
     client: '',     // company; also the name of the folder the CV is saved in
     title: '',      // optional role, e.g. "Backend engineer"
     cv: '',         // file name of the CV that was sent, e.g. "CV v3 backend.pdf"

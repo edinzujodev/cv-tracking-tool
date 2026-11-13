@@ -35,6 +35,16 @@
             <label class="form-label" for="job">Job link or description</label>
             <textarea id="job" name="job" class="form-control" rows="3" required placeholder="https://… or paste the job description"></textarea>
           </div>
+          <div class="mb-3">
+            <label class="form-label" for="jobText">Saved job text <span class="text-body-secondary small">(kept even if the link stops working)</span></label>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <button type="button" id="fetchBtn" class="btn btn-outline-primary btn-sm"><i class="bi bi-cloud-download me-1"></i>Fetch from link</button>
+              <select id="tabPick" class="form-select form-select-sm w-auto" style="max-width:22rem" aria-label="Open tab to capture"></select>
+              <button type="button" id="captureBtn" class="btn btn-outline-primary btn-sm"><i class="bi bi-window-sidebar me-1"></i>Capture from open tab</button>
+              <span id="scrapeMsg" class="small align-self-center text-body-secondary"></span>
+            </div>
+            <textarea id="jobText" name="jobText" class="form-control" rows="5" placeholder="Fetched or captured text appears here. You can also paste or edit it."></textarea>
+          </div>
           <div class="row g-3 mb-3">
             <div class="col-md-4">
               <label class="form-label" for="client">Client / company</label>
@@ -95,6 +105,14 @@
 
     <p class="text-center text-body-secondary small mt-4 mb-0"><i class="bi bi-shield-lock me-1"></i>Everything stays in your browser. Nothing is uploaded.</p>
   </main>
+  <dialog id="jobDialog" class="card shadow border-0 p-0">
+    <div class="card-header d-flex align-items-center gap-2">
+      <strong id="jobDialogTitle" class="flex-grow-1"></strong>
+      <button type="button" id="jobCopy" class="btn btn-outline-secondary btn-sm"><i class="bi bi-clipboard me-1"></i>Copy</button>
+      <button type="button" id="jobClose" class="btn btn-outline-secondary btn-sm">Close</button>
+    </div>
+    <pre id="jobDialogBody" class="card-body mb-0"></pre>
+  </dialog>
   <script type="module" src="tracker.js"></script>
 </body>
 </html>

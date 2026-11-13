@@ -5,7 +5,12 @@
   "description": "Track the jobs you applied to, which CV you sent, when, and where each application stands. Everything stays in your browser.",
   "minimum_chrome_version": "116",
   "permissions": [
-    "storage"
+    "storage",
+    "unlimitedStorage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "src/background.js"

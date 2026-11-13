@@ -4,6 +4,7 @@ import {
 import {
   putCv, getCv, deleteCv, fileKey, getRoot, setRoot, ensureWritable, saveToClientFolder,
 } from './files.js';
+import { fetchJobText, listCapturableTabs, captureTab } from './scrape.js';
 
 const $ = (id) => document.getElementById(id);
 const form = $('form');
@@ -124,6 +125,15 @@ function row(a) {
     await pruneCv(a.cvKey);
     render();
   });
+  if (a.jobText) {
+    const view = iconButton('file-text', 'View saved job text', 'btn-outline-primary me-1');
+    view.addEventListener('click', () => {
+      $('jobDialogTitle').textContent = [a.client, a.title].filter(Boolean).join(' — ') || 'Job posting';
+      $('jobDialogBody').textContent = a.jobText;
+      $('jobDialog').showModal();
+    });
+    actions.append(view);
+  }
   actions.append(edit, del);
 
   tr.append(date, jobCell(a), cv, status, actions);
@@ -185,6 +195,7 @@ function resetForm() {
   editingId = null;
   const blank = emptyApplication();
   form.reset();
+  scrapeMsg('');
   form.elements.appliedOn.value = formatDate(blank.appliedOn);
   form.elements.status.value = blank.status;
   fillCvPick();
@@ -200,7 +211,8 @@ function setSaveLabel(text, ic) {
 
 function startEdit(a) {
   editingId = a.id;
-  for (const f of ['job', 'client', 'title', 'status']) form.elements[f].value = a[f];
+  for (const f of ['job', 'jobText', 'client', 'title', 'status']) form.elements[f].value = a[f] || '';
+  $('scrapeMsg').textContent = '';
   form.elements.appliedOn.value = formatDate(a.appliedOn);
   fillCvPick(a.cvKey);
   form.elements.cvFile.value = '';
@@ -220,6 +232,7 @@ form.addEventListener('submit', async (e) => {
   }
   const data = {
     job: form.elements.job.value.trim(),
+    jobText: form.elements.jobText.value.trim(),
     client: form.elements.client.value.trim(),
     title: form.elements.title.value.trim(),
     appliedOn: applied,
@@ -231,6 +244,15 @@ form.addEventListener('submit', async (e) => {
     form.elements.cvFile.setCustomValidity('Choose a CV you used before, or upload one.');
     form.elements.cvFile.reportValidity();
     return;
+  }
+  // A link with no saved text yet: try to save the posting now, while the link still works.
+  let scrapeNote = '';
+  if (isLink(data.job) && !data.jobText) {
+    try {
+      data.jobText = await fetchJobText(data.job);
+    } catch (err) {
+      scrapeNote = ' The job text could not be saved automatically; edit the row and use "Capture from open tab".';
+    }
   }
   // Ask for folder access now, while the click that submitted the form still counts.
   const root = await getRoot();
@@ -267,9 +289,57 @@ form.addEventListener('submit', async (e) => {
   if (oldKey !== data.cvKey) await pruneCv(oldKey);
   resetForm();
   render();
-  if (savedTo) flash(`CV saved to ${savedTo}`);
-  else if (!canWrite) flash('Application saved. Choose a CV folder to also save the file on disk.');
+  if (savedTo) flash(`CV saved to ${savedTo}.${scrapeNote}`);
+  else if (!canWrite) flash(`Application saved. Choose a CV folder to also save the file on disk.${scrapeNote}`);
+  else if (scrapeNote) flash(`Application saved.${scrapeNote}`);
 });
+
+function scrapeMsg(msg, bad = false) {
+  const el = $('scrapeMsg');
+  el.textContent = msg;
+  el.className = `small align-self-center ${bad ? 'text-danger' : 'text-body-secondary'}`;
+}
+
+$('fetchBtn').addEventListener('click', async () => {
+  const url = form.elements.job.value.trim();
+  if (!isLink(url)) return scrapeMsg('Put the job link in the first box.', true);
+  scrapeMsg('Fetching…');
+  try {
+    form.elements.jobText.value = await fetchJobText(url);
+    scrapeMsg('Saved the text from the link.');
+  } catch (err) {
+    scrapeMsg(err.name === 'AbortError' ? 'The site took too long to answer.' : err.message, true);
+  }
+});
+
+async function fillTabPick() {
+  const pick = $('tabPick');
+  pick.innerHTML = '<option value="">Open tab…</option>';
+  for (const t of await listCapturableTabs()) {
+    const o = document.createElement('option');
+    o.value = t.id;
+    o.textContent = (t.title || t.url).slice(0, 80);
+    pick.append(o);
+  }
+}
+$('tabPick').addEventListener('focus', fillTabPick);
+
+$('captureBtn').addEventListener('click', async () => {
+  if (!$('tabPick').value) await fillTabPick();
+  const id = Number($('tabPick').value);
+  if (!id) return scrapeMsg('Pick the open tab with the job posting first.', true);
+  try {
+    const r = await captureTab(id);
+    form.elements.jobText.value = r.text;
+    if (!isLink(form.elements.job.value)) form.elements.job.value = r.url;
+    scrapeMsg(`Captured ${r.text.length.toLocaleString()} characters from the tab.`);
+  } catch (err) {
+    scrapeMsg(err.message, true);
+  }
+});
+
+$('jobClose').addEventListener('click', () => $('jobDialog').close());
+$('jobCopy').addEventListener('click', () => navigator.clipboard.writeText($('jobDialogBody').textContent));
 
 function syncCvHint() {
   form.elements.cvFile.setCustomValidity('');

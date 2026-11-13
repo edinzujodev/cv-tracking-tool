@@ -23,3 +23,7 @@ td a.cv:hover { text-decoration: underline; }
 
 tr.Offer td:first-child { box-shadow: inset 4px 0 var(--bs-success); }
 tr.Rejected td:first-child { box-shadow: inset 4px 0 var(--bs-danger); }
+
+#jobDialog { width: min(48rem, 92vw); max-height: 85vh; }
+#jobDialog::backdrop { background: rgb(0 0 0 / .5); }
+#jobDialogBody { white-space: pre-wrap; overflow-wrap: anywhere; overflow-y: auto; font-family: inherit; font-size: .9rem; }
