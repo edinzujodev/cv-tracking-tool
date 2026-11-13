@@ -1,14 +1,25 @@
-main.container { max-width: 960px; padding: 1.5rem 1rem; }
-#folder { display: flex; gap: 0.75rem; align-items: center; }
-#folder button { width: auto; margin: 0; }
-hgroup h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
-.bar { display: flex; gap: 0.75rem; align-items: center; }
-.bar h2 { flex: 1; margin: 0; font-size: 1.2rem; }
-.bar select, .bar button { width: auto; margin: 0; }
-td select { margin: 0; padding: 0.25rem 2rem 0.25rem 0.5rem; width: auto; }
-td button { margin: 0 0.25rem 0 0; padding: 0.15rem 0.6rem; width: auto; }
-td a.cv { overflow-wrap: anywhere; }
+:root { --accent-1: #4f46e5; --accent-2: #2563eb; }
+body { background: var(--bs-tertiary-bg); }
+main.container { max-width: 1040px; }
+
+.app-header { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); color: #fff; box-shadow: 0 2px 12px rgb(37 99 235 / 0.25); }
+.app-header .container { max-width: 1040px; }
+#folderName { max-width: 18rem; overflow-wrap: anywhere; }
+
+.card { border-radius: 0.75rem; overflow: hidden; border-color: var(--bs-border-color-translucent); }
+.card-header { padding: 0.8rem 1rem; }
+
+.stat { cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; background: var(--bs-body-bg); color: inherit; }
+.stat:hover { transform: translateY(-2px); }
+.stat.active { outline: 2px solid var(--accent-2); }
+.stat-icon { width: 2.25rem; height: 2.25rem; border-radius: 0.6rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem; flex: none; }
+
 td.job { max-width: 24rem; overflow-wrap: anywhere; }
-td.job small { display: block; color: var(--pico-muted-color); }
-tr.Offer td:first-child { box-shadow: inset 3px 0 var(--pico-ins-color); }
-tr.Rejected td:first-child { box-shadow: inset 3px 0 var(--pico-del-color); }
+td.job small { display: block; }
+td a.cv { overflow-wrap: anywhere; text-decoration: none; }
+td a.cv:hover { text-decoration: underline; }
+.status-select { width: auto; min-width: 7.5rem; border: 0; font-weight: 500; cursor: pointer; }
+.status-select option { color: var(--bs-body-color); background: var(--bs-body-bg); }
+
+tr.Offer td:first-child { box-shadow: inset 4px 0 var(--bs-success); }
+tr.Rejected td:first-child { box-shadow: inset 4px 0 var(--bs-danger); }

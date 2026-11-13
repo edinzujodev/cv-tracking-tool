@@ -1,5 +1,5 @@
 import {
-  STATUSES, emptyApplication, isLink, toCsv, today, loadApplications, saveApplications,
+  STATUSES, emptyApplication, isLink, toCsv, today, formatDate, parseDate, loadApplications, saveApplications, mergeImported,
 } from './model.js';
 import {
   putCv, getCv, deleteCv, fileKey, getRoot, setRoot, ensureWritable, saveToClientFolder,
@@ -15,6 +15,35 @@ let editingId = null;
 
 const options = (list) => list.map((s) => `<option>${s}</option>`).join('');
 
+const BADGE = {
+  Applied: 'primary', Interview: 'info', Offer: 'success', Rejected: 'danger', Ghosted: 'secondary', Withdrawn: 'dark',
+};
+const STATUS_ICON = {
+  Applied: 'send', Interview: 'chat-dots', Offer: 'trophy', Rejected: 'x-circle', Ghosted: 'incognito', Withdrawn: 'arrow-counterclockwise',
+};
+
+// Follow the system light/dark setting.
+const dark = window.matchMedia('(prefers-color-scheme: dark)');
+const applyTheme = () => { document.documentElement.dataset.bsTheme = dark.matches ? 'dark' : 'light'; };
+applyTheme();
+dark.addEventListener('change', applyTheme);
+
+function icon(name) {
+  const i = document.createElement('i');
+  i.className = `bi bi-${name}`;
+  return i;
+}
+
+function iconButton(name, label, cls) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = `btn btn-sm ${cls}`;
+  b.title = label;
+  b.setAttribute('aria-label', label);
+  b.append(icon(name));
+  return b;
+}
+
 function jobCell(a) {
   const title = [a.client, a.title].filter(Boolean).join(' — ');
   const td = document.createElement('td');
@@ -28,13 +57,16 @@ function jobCell(a) {
     link.textContent = title ? new URL(a.job).hostname : a.job;
     if (title) {
       const small = document.createElement('small');
-      small.append(link);
+      small.className = 'text-body-secondary';
+      small.append(icon('box-arrow-up-right'), ' ', link);
+      small.firstChild.className += ' me-1';
       td.append(small);
     } else td.append(link);
   } else {
     const text = a.job.length > 140 ? `${a.job.slice(0, 140)}…` : a.job;
     if (title) {
       const small = document.createElement('small');
+      small.className = 'text-body-secondary';
       small.textContent = text;
       td.append(small);
     } else td.append(text);
@@ -47,14 +79,16 @@ function row(a) {
   tr.className = a.status;
 
   const date = document.createElement('td');
-  date.textContent = a.appliedOn;
+  date.className = 'text-nowrap';
+  date.textContent = formatDate(a.appliedOn);
 
   const cv = document.createElement('td');
   if (a.cvKey) {
     const link = document.createElement('a');
     link.className = 'cv';
     link.href = '#';
-    link.textContent = a.cv;
+    link.append(icon('file-earmark-text'), ` ${a.cv}`);
+    link.firstChild.className += ' me-1';
     link.addEventListener('click', async (e) => {
       e.preventDefault();
       const file = await getCv(a.cvKey);
@@ -66,6 +100,8 @@ function row(a) {
 
   const status = document.createElement('td');
   const select = document.createElement('select');
+  select.className = `form-select form-select-sm status-select text-bg-${BADGE[a.status] || 'secondary'}`;
+  select.setAttribute('aria-label', 'Status');
   select.innerHTML = options(STATUSES);
   select.value = a.status;
   select.addEventListener('change', async () => {
@@ -76,13 +112,10 @@ function row(a) {
   status.append(select);
 
   const actions = document.createElement('td');
-  const edit = document.createElement('button');
-  edit.textContent = 'Edit';
-  edit.className = 'outline secondary';
+  actions.className = 'text-end text-nowrap';
+  const edit = iconButton('pencil', 'Edit', 'btn-outline-secondary me-1');
   edit.addEventListener('click', () => startEdit(a));
-  const del = document.createElement('button');
-  del.textContent = 'Delete';
-  del.className = 'outline secondary';
+  const del = iconButton('trash', 'Delete', 'btn-outline-danger');
   del.addEventListener('click', async () => {
     if (!confirm('Delete this application?')) return;
     apps = apps.filter((x) => x.id !== a.id);
@@ -124,39 +157,72 @@ function render() {
   $('empty').hidden = shown.length > 0;
   $('table').hidden = shown.length === 0;
   $('count').textContent = `Applications (${shown.length}${filter.value === 'All' ? '' : ` ${filter.value.toLowerCase()}`})`;
+  renderStats();
   fillCvPick(form.elements.cvPick.value);
+}
+
+function renderStats() {
+  const box = $('stats');
+  const tiles = [['All', apps.length, 'list-check', 'primary'], ...STATUSES.map((s) => [s, apps.filter((a) => a.status === s).length, STATUS_ICON[s], BADGE[s]])];
+  box.replaceChildren(...tiles.map(([name, n, ic, color]) => {
+    const col = document.createElement('div');
+    col.className = 'col-6 col-md-4 col-lg';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `stat card h-100 w-100 text-start border-0 shadow-sm${filter.value === name ? ' active' : ''}`;
+    btn.innerHTML = `<div class="card-body py-2 px-3 d-flex align-items-center gap-3">
+      <span class="stat-icon text-bg-${color}"><i class="bi bi-${ic}"></i></span>
+      <span><span class="d-block fs-4 fw-semibold lh-1"></span><small class="text-body-secondary"></small></span></div>`;
+    btn.querySelector('.fs-4').textContent = n;
+    btn.querySelector('small').textContent = name === 'All' ? 'Total' : name;
+    btn.addEventListener('click', () => { filter.value = name; render(); });
+    col.append(btn);
+    return col;
+  }));
 }
 
 function resetForm() {
   editingId = null;
   const blank = emptyApplication();
   form.reset();
-  form.elements.appliedOn.value = blank.appliedOn;
+  form.elements.appliedOn.value = formatDate(blank.appliedOn);
   form.elements.status.value = blank.status;
   fillCvPick();
   syncCvHint();
-  $('save').textContent = 'Add application';
+  setSaveLabel('Add application', 'plus-lg');
   $('cancel').hidden = true;
+}
+
+function setSaveLabel(text, ic) {
+  $('save').replaceChildren(icon(ic), ` ${text}`);
+  $('save').firstChild.className += ' me-1';
 }
 
 function startEdit(a) {
   editingId = a.id;
-  for (const f of ['job', 'client', 'title', 'appliedOn', 'status']) form.elements[f].value = a[f];
+  for (const f of ['job', 'client', 'title', 'status']) form.elements[f].value = a[f];
+  form.elements.appliedOn.value = formatDate(a.appliedOn);
   fillCvPick(a.cvKey);
   form.elements.cvFile.value = '';
   syncCvHint();
-  $('save').textContent = 'Save changes';
+  setSaveLabel('Save changes', 'check-lg');
   $('cancel').hidden = false;
   form.scrollIntoView({ behavior: 'smooth' });
 }
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
+  const applied = form.elements.appliedOn.value.trim() ? parseDate(form.elements.appliedOn.value) : today();
+  if (!applied) {
+    form.elements.appliedOn.setCustomValidity('Use the format dd/mm/yy, for example 05/11/26.');
+    form.elements.appliedOn.reportValidity();
+    return;
+  }
   const data = {
     job: form.elements.job.value.trim(),
     client: form.elements.client.value.trim(),
     title: form.elements.title.value.trim(),
-    appliedOn: form.elements.appliedOn.value || today(),
+    appliedOn: applied,
     status: form.elements.status.value,
   };
   const file = form.elements.cvFile.files[0];
@@ -212,6 +278,8 @@ function syncCvHint() {
   $('cvHint').textContent = hasFile ? 'The uploaded file will be used.' : 'Pick one you used before, or upload a new one.';
 }
 form.elements.cvFile.addEventListener('change', syncCvHint);
+form.elements.appliedOn.addEventListener('input', () => form.elements.appliedOn.setCustomValidity(''));
+$('todayBtn').addEventListener('click', () => { form.elements.appliedOn.value = formatDate(today()); form.elements.appliedOn.setCustomValidity(''); });
 
 function flash(msg) {
   $('folderName').textContent = msg;
@@ -243,6 +311,31 @@ $('export').addEventListener('click', () => {
   a.download = `applications-${today()}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
+});
+
+$('exportJson').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(apps, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `applications-backup-${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+$('importJson').addEventListener('click', () => $('importFile').click());
+$('importFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const result = mergeImported(apps, await file.text());
+    apps = result.apps;
+    await saveApplications(apps);
+    render();
+    alert(`Imported ${result.added} application(s); ${result.skipped} already present or skipped.`);
+  } catch (err) {
+    alert(`Import failed: ${err.message}`);
+  }
 });
 
 (async () => {

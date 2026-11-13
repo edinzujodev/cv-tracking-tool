@@ -4,70 +4,96 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CV Tracking Tool</title>
-  <link rel="stylesheet" href="../vendor/pico.min.css">
+  <link rel="icon" type="image/png" href="../icons/icon32.png">
+  <link rel="stylesheet" href="../vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="../vendor/bootstrap-icons.min.css">
   <link rel="stylesheet" href="tracker.css">
 </head>
 <body>
-  <main class="container">
-    <hgroup>
-      <h1>CV Tracking Tool</h1>
-      <p>Which job, which CV, when, and where it stands.</p>
-    </hgroup>
+  <header class="app-header">
+    <div class="container d-flex align-items-center gap-3 py-3">
+      <img src="../icons/icon48.png" width="44" height="44" alt="" class="rounded-3 shadow-sm">
+      <div class="flex-grow-1">
+        <h1 class="h4 mb-0 fw-bold">CV Tracking Tool</h1>
+        <p class="mb-0 opacity-75 small">Which job, which CV, when, and where it stands.</p>
+      </div>
+      <div id="folder" class="d-flex align-items-center gap-2 text-end">
+        <small id="folderName" class="opacity-75"></small>
+        <button type="button" id="pickFolder" class="btn btn-light btn-sm text-nowrap"><i class="bi bi-folder2-open me-1"></i>Choose CV folder</button>
+      </div>
+    </div>
+  </header>
 
-    <p id="folder">
-      <button type="button" id="pickFolder" class="outline">Choose CV folder</button>
-      <small id="folderName"></small>
-    </p>
+  <main class="container py-4">
+    <div id="stats" class="row g-3 mb-4"></div>
 
-    <form id="form">
-      <label>Job link or description
-        <textarea name="job" rows="3" required placeholder="https://… or paste the job description"></textarea>
-      </label>
-      <div class="grid">
-        <label>Client / company
-          <input name="client" required placeholder="Acme">
-        </label>
-        <label>Role (optional)
-          <input name="title" placeholder="Backend engineer">
-        </label>
-        <label>CV used
-          <select name="cvPick"></select>
-          <input name="cvFile" type="file" accept=".pdf,.doc,.docx,.odt,.rtf,.txt">
-          <small id="cvHint"></small>
-        </label>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-body-tertiary fw-semibold"><i class="bi bi-plus-circle me-2 text-primary"></i>Application</div>
+      <div class="card-body">
+        <form id="form">
+          <div class="mb-3">
+            <label class="form-label" for="job">Job link or description</label>
+            <textarea id="job" name="job" class="form-control" rows="3" required placeholder="https://… or paste the job description"></textarea>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label" for="client">Client / company</label>
+              <input id="client" name="client" class="form-control" required placeholder="Acme">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="title">Role (optional)</label>
+              <input id="title" name="title" class="form-control" placeholder="Backend engineer">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="cvPick">CV used</label>
+              <select id="cvPick" name="cvPick" class="form-select mb-2"></select>
+              <input name="cvFile" type="file" class="form-control" accept=".pdf,.doc,.docx,.odt,.rtf,.txt" aria-label="Upload a CV">
+              <div id="cvHint" class="form-text"></div>
+            </div>
+          </div>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label" for="appliedOn">Date applied</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                <input id="appliedOn" name="appliedOn" class="form-control" required placeholder="dd/mm/yy" inputmode="numeric" pattern="\d{1,2}[/.\-]\d{1,2}[/.\-](\d{2}|\d{4})" title="dd/mm/yy">
+                <button type="button" id="todayBtn" class="btn btn-outline-secondary">Today</button>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="status">Status</label>
+              <select id="status" name="status" class="form-select"></select>
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" id="save" class="btn btn-primary px-4"><i class="bi bi-plus-lg me-1"></i>Add application</button>
+            <button type="button" id="cancel" class="btn btn-outline-secondary" hidden>Cancel edit</button>
+          </div>
+        </form>
       </div>
-      <div class="grid">
-        <label>Date applied
-          <input name="appliedOn" type="date" required>
-        </label>
-        <label>Status
-          <select name="status"></select>
-        </label>
-      </div>
-      <div class="grid">
-        <button type="submit" id="save">Add application</button>
-        <button type="button" id="cancel" class="secondary" hidden>Cancel edit</button>
-      </div>
-    </form>
+    </div>
 
-    <section>
-      <div class="bar">
-        <h2 id="count">Applications</h2>
-        <select id="filter" aria-label="Filter by status"></select>
-        <button id="export" class="outline secondary">Export CSV</button>
+    <div class="card shadow-sm">
+      <div class="card-header bg-body-tertiary d-flex flex-wrap align-items-center gap-2">
+        <h2 id="count" class="h6 mb-0 fw-semibold flex-grow-1"><i class="bi bi-table me-2 text-primary"></i>Applications</h2>
+        <select id="filter" class="form-select form-select-sm w-auto" aria-label="Filter by status"></select>
+        <button id="export" class="btn btn-outline-secondary btn-sm"><i class="bi bi-filetype-csv me-1"></i>Export CSV</button>
+        <button id="exportJson" class="btn btn-outline-secondary btn-sm"><i class="bi bi-download me-1"></i>Backup JSON</button>
+        <button id="importJson" class="btn btn-outline-secondary btn-sm"><i class="bi bi-upload me-1"></i>Import JSON</button>
+        <input id="importFile" type="file" accept=".json,application/json" hidden>
       </div>
-      <figure>
-        <table id="table" role="grid">
-          <thead>
+      <div class="table-responsive">
+        <table id="table" class="table table-hover align-middle mb-0">
+          <thead class="table-light">
             <tr><th>Applied</th><th>Job</th><th>CV</th><th>Status</th><th></th></tr>
           </thead>
           <tbody id="rows"></tbody>
         </table>
-      </figure>
-      <p id="empty" hidden>Nothing here yet. Add your first application above.</p>
-    </section>
+      </div>
+      <p id="empty" class="text-center text-body-secondary py-5 mb-0" hidden><i class="bi bi-inbox fs-2 d-block mb-2"></i>Nothing here yet. Add your first application above.</p>
+    </div>
 
-    <small>Everything stays in your browser. Nothing is uploaded.</small>
+    <p class="text-center text-body-secondary small mt-4 mb-0"><i class="bi bi-shield-lock me-1"></i>Everything stays in your browser. Nothing is uploaded.</p>
   </main>
   <script type="module" src="tracker.js"></script>
 </body>
