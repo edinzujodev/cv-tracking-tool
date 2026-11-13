@@ -77,7 +77,49 @@ export async function captureTab(tabId) {
     func: () => {
       const main = document.querySelector('main, [role="main"], article');
       const pick = main && main.innerText.length > 500 ? main : document.body;
-      return { text: pick.innerText, title: document.title, url: location.href };
+      let role = '';
+      let client = '';
+
+      // 1. Structured data (schema.org JobPosting) is the most reliable source.
+      for (const s of document.querySelectorAll('script[type="application/ld+json"]')) {
+        try {
+          const data = JSON.parse(s.textContent);
+          const items = Array.isArray(data) ? data : [data, ...(data['@graph'] || [])];
+          const job = items.find((i) => i && i['@type'] === 'JobPosting');
+          if (job) {
+            role = String(job.title || '').trim();
+            const org = job.hiringOrganization;
+            client = String((org && (org.name || org)) || '').trim();
+            break;
+          }
+        } catch { /* ignore invalid JSON */ }
+      }
+
+      // 2. Fall back to the page title, which usually reads "Role | Company | Site" or similar.
+      if (!role || !client) {
+        const sites = /^(linkedin|indeed|glassdoor|monster|ziprecruiter|jobs?|careers?|apply)(\.com)?$/i;
+        const parts = document.title.split(/\s+[|\-–—·]\s+/).map((p) => p.trim()).filter((p) => p && !sites.test(p));
+        const li = /^(.+?) hiring (.+?)(?: in .+)?$/i.exec(parts[0] || '');
+        if (li) {
+          client = client || li[1];
+          role = role || li[2];
+        } else {
+          const at = /^(.+?) at (.+)$/i.exec(parts[0] || '');
+          if (at) {
+            role = role || at[1];
+            client = client || at[2];
+          } else {
+            role = role || parts[0] || '';
+            client = client || parts[1] || '';
+          }
+        }
+      }
+      if (!client) {
+        const site = document.querySelector('meta[property="og:site_name"]');
+        const ats = /(?:greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com)\/([^/?#]+)/i.exec(location.href);
+        client = (ats && ats[1]) || (site && site.content) || '';
+      }
+      return { text: pick.innerText, title: document.title, url: location.href, role, client };
     },
   });
   const r = res && res.result;

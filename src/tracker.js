@@ -332,7 +332,11 @@ $('captureBtn').addEventListener('click', async () => {
     const r = await captureTab(id);
     form.elements.jobText.value = r.text;
     if (!isLink(form.elements.job.value)) form.elements.job.value = r.url;
-    scrapeMsg(`Captured ${r.text.length.toLocaleString()} characters from the tab.`);
+    // Only fill empty fields, so anything you typed is kept.
+    const filled = [];
+    if (r.client && !form.elements.client.value.trim()) { form.elements.client.value = r.client; filled.push('client'); }
+    if (r.role && !form.elements.title.value.trim()) { form.elements.title.value = r.role; filled.push('role'); }
+    scrapeMsg(`Captured ${r.text.length.toLocaleString()} characters${filled.length ? `; filled ${filled.join(' and ')}, please check` : ''}.`);
   } catch (err) {
     scrapeMsg(err.message, true);
   }
